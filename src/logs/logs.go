@@ -13,9 +13,9 @@ package logs
 import (
 	"bytes"
 	"fmt"
+	"github.com/rdegges/go-ipify"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"github.com/rdegges/go-ipify"
 	"io/ioutil"
 	"log"
 	"net"
@@ -23,6 +23,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"syscall"
 )
 
 var (
@@ -34,8 +35,8 @@ var (
 
 	// initialFields 默认初始字段为进程 id
 	initialFields = map[string]interface{}{
-		//"pid":       syscall.Getpid(),
-		//"server_ip": ServerIP(),
+		"pid":       syscall.Getpid(),
+		"server_ip": ServerIP(),
 	}
 
 	// loggerName 默认 logger name 为 logs
@@ -112,7 +113,7 @@ func init() {
 	//logConfig := config.GetConfig().Logger
 
 	// scheme 为 lumberjack ,日志文件为 /tmp/x.log , 保存 7 天,保留 10 份文件,文件大小超过 100M ,使用压缩备份,压缩文件名使用 localtime
-	//sink := NewLumberjackSink("lumberjack", "/tmp/x.log", 7, 10, 100, true, true)
+	sink := NewLumberjackSink("lumberjack", "/tmp/x.log", 7, 10, 100, true, true)
 
 	// lumberjack hook
 	//sink := NewLumberjackSink("lumberjack", logConfig.LogFileName, logConfig.MaxAge, logConfig.MaxBackups, logConfig.MaxSize, logConfig.Compress, logConfig.LocalTime)
@@ -121,19 +122,19 @@ func init() {
 	outPaths = []string{"stdout", "lumberjack://"}
 
 	// 日志级别 DEBUG,ERROR, INFO
-	//level := logConfig.LogLevel
+	level := "debug"
 
 	// ctxLogger
 	options := Options{
 		Name:              loggerName,
-		Level:             "debug",
+		Level:             level,
 		Format:            "json",
 		OutputPaths:       outPaths,
 		InitialFields:     initialFields,
 		DisableCaller:     false,
 		DisableStacktrace: true,
 		// 使用 sink 中设置的 scheme 即 lumberjack: 或 lumberjack:// 并指定保存日志到指定文件,日志文件将自动按 LumberjackSink 的配置做 rotate
-		//LumberjackSink: sink,
+		LumberjackSink: sink,
 		AtomicLevelServer: AtomicLevelServerOption{
 			Addr: os.Getenv(AtomicLevelAddrEnvKey),
 		},
